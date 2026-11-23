@@ -1,0 +1,74 @@
+name: Bug report
+description: Something is broken, or Logicc behaves differently than the README says
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Do not paste a `__client` value, a session JWT, or any cookie into this issue.**
+        Redact it — the last four characters are enough to say which account you mean.
+
+  - type: dropdown
+    id: path
+    attributes:
+      label: Which sign-in path was involved?
+      options:
+        - Paste the `__client` cookie
+        - Browser sign-in
+        - Both
+        - Neither — this is about a chat request
+    validations:
+      required: true
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, what you got.
+    validations:
+      required: true
+
+  - type: textarea
+    id: error
+    attributes:
+      label: Exact error text
+      description: As shown in magpie, or in `~/Library/Logs/magpie-web.log`. Redact any credential.
+      render: text
+    validations:
+      required: true
+
+  - type: input
+    id: node
+    attributes:
+      label: Node version
+      description: Output of `node --version`
+      placeholder: v22.11.0
+    validations:
+      required: true
+
+  - type: input
+    id: magpie
+    attributes:
+      label: magpie version
+      description: Shown in magpie's About, or `magpie --version`
+      placeholder: 0.1.4711
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: macOS 26.1 (Apple silicon)
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: Before submitting
+      options:
+        - label: I ran `npm test` and it passes
+        - label: I read the "Behaviour you should know about" table and this is not one of those known findings
+        - label: This issue contains no credential, cookie, or token
+          required: true

@@ -1,0 +1,14 @@
+node_modules/
+package-lock.json
+bun.lock
+bun.lockb
+
+# Sign-in material must never be committed. The plugin reads credentials from
+# magpie's own store; nothing here should ever hold one.
+*.cookie
+cookie.txt
+.env
+.env.*
+
+.DS_Store
+*.log

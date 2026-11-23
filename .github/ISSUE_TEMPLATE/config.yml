@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Official Logicc API instead
+    url: https://help.logicc.com/docs/api/logicc-api-dokumentation
+    about: If you can get an official key, that path needs no plugin and is the one to prefer.

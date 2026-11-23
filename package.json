@@ -1,0 +1,38 @@
+{
+  "name": "magpie-logicc-provider",
+  "version": "0.1.0",
+  "description": "Logicc (app.logicc.com) as a magpie / OpenCode provider: sign in with the browser's __client cookie, live model catalog, chat completions and client tools",
+  "type": "module",
+  "main": "./opencode.mjs",
+  "exports": {
+    ".": "./opencode.mjs"
+  },
+  "files": [
+    "index.mjs",
+    "opencode.mjs",
+    "src/",
+    "README.md",
+    "README.zh-CN.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "magpie",
+    "magpie-plugin",
+    "opencode",
+    "opencode-plugin",
+    "logicc",
+    "provider",
+    "llm-gateway"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs"
+  },
+  "magpie": {
+    "icon": "https://www.logicc.com/favicon.ico",
+    "maxConcurrency": 1
+  }
+}
