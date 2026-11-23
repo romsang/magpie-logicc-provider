@@ -4,6 +4,9 @@
 
 [English](README.md) · 简体中文
 
+> [!IMPORTANT]
+> **这不是给编码 agent 用的 provider。** Logicc 的聊天接口每次只收约 120,000 字符，而 Claude Code 光是系统提示就差不多这么多。它适合提问、写作和轻量 agent；不适合 Claude Code、Codex，以及任何自带大段固定提示的 agent。实测数据见[已知限制](#上下文窗口很小这不是给编码-agent-用的)。
+
 ---
 
 Logicc 确实有官方的 OpenAI 兼容 API，但 key 是人工开通的：要发邮件过去，报公司、用途、需要的模型。没有自助页面。这个插件走另一条路——用你已经付费的网页端，按它前端自己的方式跟它说话。
@@ -247,7 +250,33 @@ Logicc 返回 AI SDK v6 事件（`text-delta`、`tool-input-start`、`tool-input
 
 ## 已知限制
 
-**浏览器登录不通用。** 读 Chrome 的 cookie 库意味着用 macOS 存在登录钥匙串里的密钥去解密，而 macOS 是按应用门控浏览器 cookie 库的。在 macOS 26 上实测：
+### 上下文窗口很小——这不是给编码 agent 用的
+
+**Logicc 的聊天接口每次请求只接受约 120,000 字符，超过就返回一个光秃秃的 HTTP 400。** 这不是模型自己的窗口：Logicc 给这些模型标 `contextWindow: "gigantic"`，听着像一百万 token，但它前面那个接口只收约 30,000 token 的 prompt，多一个都不行。对真实账号二分实测：120,000 字符通过，122,000 返回 400。
+
+这个数字之所以要紧，是因为 agent 在干任何正事之前就要先发一堆东西：
+
+| 项目 | 大小 |
+|---|---|
+| Logicc 接口上限 | 约 120,000 字符 |
+| Claude Code 的系统提示（含工具定义） | 约 110,000–128,000 字符 |
+
+一轮 Claude Code 请求**在第一句话还没说之前就已经超了**。Codex 也一样。所以：
+
+| 用途 | 能不能用 |
+|---|---|
+| 提问、写作、翻译、短分析 | ✅ 可以 |
+| OpenCode 等轻量 agent | ✅ 通常可以 |
+| **Claude Code / Codex / 长上下文编码 agent** | ❌ 系统提示一项就占满了 |
+| 分析很长的文档 | ⚠️ 只在约 120,000 字符以内可行 |
+
+插件**不会为了塞进去而截断**。悄悄剪掉系统提示或对话记录，等于改变了 agent 被交代的事情，而回来的答案看起来正常，实际却建立在一个没人批准过的请求上。超长的请求会被明确拒绝并说明原因，而不是硬改。
+
+想让 Claude Code 或 Codex 跑这些模型，去申请官方 Logicc API key——`api.logicc.cloud` 那个网关是另一套前端，窗口可能更大——或者换一个窗口真的够大的 provider。
+
+### 浏览器登录不通用
+
+读 Chrome 的 cookie 库意味着用 macOS 存在登录钥匙串里的密钥去解密，而 macOS 是按应用门控浏览器 cookie 库的。在 macOS 26 上实测：
 
 | 谁在读 | 直接读文件 | 经 `osascript do shell script` |
 |---|---|---|
@@ -266,7 +295,7 @@ Logicc 返回 AI SDK v6 事件（`text-delta`、`tool-input-start`、`tool-input
 ## 开发
 
 ```bash
-npm test                          # 35 个单元测试，不联网
+npm test                          # 36 个单元测试，不联网
 node test/live.e2e.mjs <文件>      # 真实账号端到端，会花额度
 ```
 

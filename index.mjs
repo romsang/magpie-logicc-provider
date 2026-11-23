@@ -26,9 +26,10 @@ import { stateOf, pending, openInChrome, openElsewhere, canReadCookies, dbg, SIG
 const ID = "logicc"
 const NAME = "Logicc"
 
-// The largest prompt Logicc's chat endpoint takes, in characters. Measured:
-// ~115,600 passed, ~125,000 answered 400. A little under the measured edge.
-const PROMPT_CHAR_LIMIT = 110_000
+// The largest prompt Logicc's chat endpoint takes, in characters. Measured by
+// bisection against a live account: 120,000 passed, 122,000 answered 400. The
+// cap sits a little under that edge.
+const PROMPT_CHAR_LIMIT = 120_000
 
 // The nonce the current browser sign-in put in its redirect, so a callback
 // can tell that sign-in's arrival apart from any older Logicc tab.
@@ -218,8 +219,17 @@ function createPlugin() {
     // a message it can act on (compact, then retry) instead of an opaque
     // upstream failure. The character cap is the measured one; keep a margin.
     if (prompt.length > PROMPT_CHAR_LIMIT) {
+      // Nothing is truncated to make this fit. Cutting a system prompt or a
+      // transcript silently changes what the agent was told, and the answer
+      // that comes back looks normal while being built on a request the user
+      // never approved. The limit is the endpoint's, measured; the fix is a
+      // smaller context or another provider, and saying so is the honest
+      // answer.
       throw new LogiccError(
-        `logicc: this turn is ${prompt.length} characters, over the ${PROMPT_CHAR_LIMIT} Logicc accepts — the transcript has to be shortened`,
+        `logicc: this turn is ${prompt.length.toLocaleString()} characters, ` +
+          `over the ${PROMPT_CHAR_LIMIT.toLocaleString()} Logicc's chat endpoint accepts. ` +
+          `Logicc is not usable for a context this large — the system prompt alone is most of it. ` +
+          `Use a provider with a bigger window for this agent, or start a fresh, shorter session.`,
         { status: 413 },
       )
     }

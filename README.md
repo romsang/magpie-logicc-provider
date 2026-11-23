@@ -4,6 +4,9 @@
 
 English · [简体中文](README.zh-CN.md)
 
+> [!IMPORTANT]
+> **Not a coding-agent provider.** Logicc's chat endpoint takes about 120,000 characters per request, and Claude Code's system prompt alone is roughly that. It works for questions, writing and lightweight agents; it does not work for Claude Code, Codex, or any agent with a large fixed prompt. See [Limitations](#the-context-window-is-small--this-is-not-a-coding-agent-provider) for the measurements.
+
 ---
 
 Logicc has an official OpenAI-compatible API, but a key for it is provisioned by hand: you email their team with a company name, a use case, and the models you need. There is no self-service page. This plugin reaches the same models through the app you already have a subscription for, by speaking to it the way the app's own frontend does.
@@ -245,7 +248,33 @@ Measured against a live account, not inferred from documentation. Each one shape
 
 ## Limitations
 
-**Browser sign-in is not portable.** Reading Chrome's cookie store means decrypting it with the key macOS keeps in the login keychain, and macOS gates a browser's cookie store *per application*. Measured on macOS 26:
+### The context window is small — this is not a coding-agent provider
+
+**Logicc's chat endpoint accepts about 120,000 characters per request, and rejects anything larger with a bare HTTP 400.** It is not the model's own window: Logicc labels these models `contextWindow: "gigantic"`, which sounds like a million tokens, but the endpoint in front of them takes roughly 30,000 tokens of prompt and no more. Measured by bisection against a live account: 120,000 characters passed, 122,000 returned 400.
+
+That number matters because of what an agent sends before it does anything useful:
+
+| What | Size |
+|---|---|
+| Logicc's endpoint limit | ~120,000 characters |
+| Claude Code's system prompt, with tool definitions | ~110,000–128,000 characters |
+
+A Claude Code turn is over the limit **before the first exchange**. Codex is similar. Which means:
+
+| Use | Works? |
+|---|---|
+| Asking a question, writing, translating, short analysis | ✅ |
+| OpenCode and other lightweight agents | ✅ usually |
+| **Claude Code / Codex / long-context coding agents** | ❌ the system prompt alone fills it |
+| Analysing a very long document | ⚠️ only while it stays under ~120,000 characters |
+
+The plugin does **not** truncate to fit. Cutting a system prompt or a transcript silently changes what the agent was told, and the answer that comes back looks normal while being built on a request nobody approved. A turn that is too long is refused with a clear message instead.
+
+If you want Claude Code or Codex to run on these models, get an official Logicc API key — the gateway at `api.logicc.cloud` is a different front end and may allow more — or use a provider whose window actually fits.
+
+### Browser sign-in is not portable
+
+Reading Chrome's cookie store means decrypting it with the key macOS keeps in the login keychain, and macOS gates a browser's cookie store *per application*. Measured on macOS 26:
 
 | Who is reading | Direct file read | Via `osascript do shell script` |
 |---|---|---|
@@ -264,7 +293,7 @@ A `launchd`-started background service has no GUI session to grant Automation pe
 ## Development
 
 ```bash
-npm test                          # 35 unit tests, no network
+npm test                          # 36 unit tests, no network
 node test/live.e2e.mjs <file>     # end to end against a real account; spends quota
 ```
 
