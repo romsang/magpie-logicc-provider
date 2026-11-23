@@ -48,14 +48,16 @@ Logicc 在 `https://api.logicc.cloud/v1` 上有官方网关，文档在 [help.lo
 
 需要 **Node.js 22+** 和 magpie。
 
+直接从 GitHub 安装——不需要 npm 账号，也不用先发到 registry：
+
 ```bash
-magpie plugin add /绝对路径/magpie-logicc-provider
+magpie plugin add github:romsang/magpie-logicc-provider
 ```
 
-或从克隆开始：
+或从本地克隆安装：
 
 ```bash
-git clone https://github.com/<你>/magpie-logicc-provider.git
+git clone https://github.com/romsang/magpie-logicc-provider.git
 magpie plugin add "$(pwd)/magpie-logicc-provider"
 ```
 

@@ -48,14 +48,16 @@ If you *can* get an official key, do that instead — it is cleaner, and it need
 
 Requires **Node.js 22+** and magpie.
 
+From GitHub — no npm account or registry needed:
+
 ```bash
-magpie plugin add /path/to/magpie-logicc-provider
+magpie plugin add github:romsang/magpie-logicc-provider
 ```
 
-Or from a clone:
+From a local clone:
 
 ```bash
-git clone https://github.com/<you>/magpie-logicc-provider.git
+git clone https://github.com/romsang/magpie-logicc-provider.git
 magpie plugin add "$(pwd)/magpie-logicc-provider"
 ```
 
