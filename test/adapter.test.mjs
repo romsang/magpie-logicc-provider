@@ -6,7 +6,7 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 
 import { credsOf, claims, fresh } from "../src/logicc.mjs"
-import { rowsOf, rowOf } from "../src/models.mjs"
+import { rowsOf, rowOf, ENDPOINT_CAP } from "../src/models.mjs"
 import { _internal } from "../index.mjs"
 
 const { contentOf, historyText, toolEnvelopePrompt, envelopeOf, stripModel } = _internal
@@ -127,25 +127,34 @@ test("rowsOf keeps every model and offers tool calls", () => {
 test("rowOf falls back to the id when there is no name", () => {
   const row = rowOf({ id: "m1" })
   assert.equal(row.name, "m1")
-  // No band given: the default context applies.
-  assert.equal(row.limit.context, 200_000)
+  // No band given: the endpoint's own ceiling applies, not a model's spec sheet.
+  assert.equal(row.limit.context, ENDPOINT_CAP)
 })
 
 test("rowOf reads Logicc's own field names", () => {
   // The live API sends displayName + a contextWindow band, not name/context.
   const row = rowOf({ id: "gpt-6.2-sol", displayName: "GPT-6.2 Sol", contextWindow: "gigantic", knowledgeCutoff: "2026-06-01" })
   assert.equal(row.name, "GPT-6.2 Sol")
-  assert.equal(row.limit.context, 1_000_000)
   assert.equal(row.release_date, "2026-06-01")
 })
 
-test("rowOf maps every band and prefers an explicit number", () => {
-  assert.equal(rowOf({ id: "a", contextWindow: "medium" }).limit.context, 200_000)
-  assert.equal(rowOf({ id: "b", contextWindow: "small" }).limit.context, 128_000)
+test("the reported context is the endpoint's ceiling, not the vendor's window", () => {
+  // Logicc labels these models "gigantic", but its chat endpoint answers 400
+  // above roughly 29,000 prompt tokens. Reporting the vendor number makes an
+  // agent fill the context and get refused, so every band reports the ceiling.
+  for (const band of ["gigantic", "large", "medium", "small"]) {
+    assert.equal(rowOf({ id: "x", contextWindow: band }).limit.context, ENDPOINT_CAP, band)
+  }
+})
+
+test("rowOf caps even an explicit number at the endpoint's ceiling", () => {
   // An unknown band falls back rather than becoming NaN.
-  assert.equal(rowOf({ id: "c", contextWindow: "colossal" }).limit.context, 200_000)
-  // A real number is taken as-is.
-  assert.equal(rowOf({ id: "d", contextWindow: 64000 }).limit.context, 64000)
+  assert.equal(rowOf({ id: "c", contextWindow: "colossal" }).limit.context, ENDPOINT_CAP)
+  // A number the endpoint could never accept is not passed through: reporting
+  // it would only produce a request Logicc answers with 400.
+  assert.equal(rowOf({ id: "d", contextWindow: 1_000_000 }).limit.context, ENDPOINT_CAP)
+  // One it can accept is kept as-is.
+  assert.equal(rowOf({ id: "e", contextWindow: 16000 }).limit.context, 16000)
 })
 
 test("rowOf does not advertise reasoning, which Logicc never streams", () => {

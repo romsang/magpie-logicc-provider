@@ -14,11 +14,22 @@
 export const NPM = "@ai-sdk/openai-compatible"
 export const CHAT_BASE = "https://app.logicc.com/api/v1"
 
-// The bands Logicc publishes, as the token counts they stand for. A band that
-// is not listed here falls back to LOGICC_CONTEXT.
-const BANDS = { gigantic: 1_000_000, large: 400_000, medium: 200_000, small: 128_000 }
+// The bands Logicc publishes, as what its chat endpoint actually accepts.
+//
+// `contextWindow` describes the model's own window at the vendor, NOT what
+// this endpoint will take: measured, a prompt above roughly 115,000 characters
+// (~29,000 tokens) is rejected with HTTP 400 no matter which band the model
+// carries. Telling magpie the vendor's number makes an agent fill the context
+// and get refused, so the cap below is the endpoint's, not the model's.
+const BANDS = { gigantic: 30_000, large: 30_000, medium: 30_000, small: 30_000 }
 
-export const DEFAULT_CONTEXT = Number(process.env.LOGICC_CONTEXT || 200_000)
+// The ceiling this endpoint accepts, in tokens, before its own 400.
+// Verified by bisection: ~28,900 tokens passed, ~31,250 did not.
+export const ENDPOINT_CAP = Number(process.env.LOGICC_ENDPOINT_CAP || 28_000)
+
+// The context a model is reported with: the endpoint's own ceiling, since a
+// larger number only invites a request Logicc answers with 400.
+export const DEFAULT_CONTEXT = Number(process.env.LOGICC_CONTEXT || ENDPOINT_CAP)
 export const DEFAULT_OUTPUT = Number(process.env.LOGICC_OUTPUT || 32_000)
 
 // A bootstrap list so the Providers page shows something before a sign-in and
@@ -34,8 +45,12 @@ const clean = (v) => (typeof v === "string" ? v.trim() : "")
 // contextOf turns a band into a token count, and respects an explicit number
 // if Logicc ever starts sending one.
 function contextOf(band, fallback = DEFAULT_CONTEXT) {
-  if (Number.isFinite(band) && band > 0) return band
-  return BANDS[clean(band).toLowerCase()] ?? fallback
+  const asked = Number.isFinite(band) && band > 0
+    ? band
+    : (BANDS[clean(band).toLowerCase()] ?? fallback)
+  // Never report more than the endpoint accepts: a bigger number does not
+  // give an agent more room, it only produces a request Logicc answers 400 to.
+  return Math.min(asked, ENDPOINT_CAP)
 }
 
 // rowOf is the descriptor both magpie readers take: the config hook reads the

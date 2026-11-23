@@ -26,6 +26,10 @@ import { stateOf, pending, openInChrome, openElsewhere, canReadCookies, dbg, SIG
 const ID = "logicc"
 const NAME = "Logicc"
 
+// The largest prompt Logicc's chat endpoint takes, in characters. Measured:
+// ~115,600 passed, ~125,000 answered 400. A little under the measured edge.
+const PROMPT_CHAR_LIMIT = 110_000
+
 // The nonce the current browser sign-in put in its redirect, so a callback
 // can tell that sign-in's arrival apart from any older Logicc tab.
 let signInNonce = ""
@@ -208,6 +212,17 @@ function createPlugin() {
     // on its own (measured — see the note above the prompt builders).
     let prompt = historyText(messages)
     if (useTools) prompt = toolEnvelopePrompt(messages, activeTools, { choice: toolChoice, parallel })
+
+    // Logicc's chat endpoint refuses a prompt over roughly 115,000 characters
+    // with a bare HTTP 400 — measured by bisection. Saying so here gives magpie
+    // a message it can act on (compact, then retry) instead of an opaque
+    // upstream failure. The character cap is the measured one; keep a margin.
+    if (prompt.length > PROMPT_CHAR_LIMIT) {
+      throw new LogiccError(
+        `logicc: this turn is ${prompt.length} characters, over the ${PROMPT_CHAR_LIMIT} Logicc accepts — the transcript has to be shortened`,
+        { status: 413 },
+      )
+    }
 
     const chatId = await createChat(auth, { signal: request.signal })
 

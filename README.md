@@ -240,7 +240,7 @@ Measured against a live account, not inferred from documentation. Each one shape
 | **A chat does not remember its own turns** | Full transcript sent every turn, no chat reuse |
 | `finish` carries no `finishReason` and no token counts; `/api/usage`, `/api/me`, `/api/credits` are 404 | Usage is reported as `null`, never invented |
 | No reasoning deltas, even for a model declared `always-reasoning-configurable` | `reasoning: false`, so agents don't wait for tokens that never arrive |
-| `contextWindow` is a band (`gigantic`, `medium`), not a number | Mapped to a known size: `gigantic` → 1,000,000 |
+| `contextWindow` is a band (`gigantic`, `medium`), not a number — and it describes the **vendor's** window, not this endpoint's | Every band reports the endpoint's real ceiling (~28,000 tokens). Reporting "gigantic" as 1,000,000 made agents fill the context and get a bare HTTP 400; verified by bisection: ~115,600 chars passed, ~125,000 returned 400 |
 | A prompt that looks like host filesystem access returns an **empty stream** — not even a `start` event | Reported as an error, never as "the model had nothing to say" |
 
 ## Limitations

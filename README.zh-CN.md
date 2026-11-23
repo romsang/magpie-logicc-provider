@@ -242,7 +242,7 @@ Logicc 返回 AI SDK v6 事件（`text-delta`、`tool-input-start`、`tool-input
 | **同一个 chat 不记得自己的轮次** | 每轮发完整历史，不复用 chat |
 | `finish` 不带 `finishReason`、不带 token 数；`/api/usage`、`/api/me`、`/api/credits` 全是 404 | 用量报 `null`，绝不编数字 |
 | 不输出 reasoning 增量，哪怕模型标着 `always-reasoning-configurable` | `reasoning: false`，免得 agent 干等永远不来的 token |
-| `contextWindow` 是档位（`gigantic`、`medium`），不是数字 | 映射成已知大小：`gigantic` → 1,000,000 |
+| `contextWindow` 是档位（`gigantic`、`medium`），不是数字；而且它说的是**厂商那边**的窗口，不是这个接口的 | 所有档位都上报接口的真实上限（约 28,000 token）。把 gigantic 当 1,000,000 报，agent 会把上下文塞满然后收到一个光秃秃的 HTTP 400；二分实测：约 115,600 字符通过，约 125,000 返回 400 |
 | prompt 看起来像在访问主机文件时，返回**空流**——连 `start` 都没有 | 当成错误报出去，绝不当作"模型没话说" |
 
 ## 已知限制
